@@ -50,7 +50,7 @@ def table_scrape(table, name, map):
     return df
 
 def vlrscrape(link):
-    driver = webdriver.Firefox()
+    driver = webdriver.Chrome()
 
     try:
         driver.get(link)
