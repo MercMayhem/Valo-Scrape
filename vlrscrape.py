@@ -80,8 +80,9 @@ def vlrscrape(link):
             map_box.remove(map)
 
         df_global = []
+        total_rounds = 0
 
-        for map in map_box:
+        for map in reversed(map_box):
             map.click()
             
             # Current map
@@ -89,17 +90,30 @@ def vlrscrape(link):
             div = driver.find_element(By.CSS_SELECTOR, "div[style*='display: block;']")
             tables = div.find_elements(By.CLASS_NAME, value='wf-table-inset')
 
+            # Rounds played
+            if map.get_attribute("class") is not None and "mod-all" in map.get_attribute("class").split():
+                rounds_played = total_rounds
+
+            else:
+                scores = [int(score.text) for score in div.find_elements(By.CLASS_NAME, "score")]
+                rounds_played = sum(scores)
+                total_rounds += rounds_played
+
             # Team 1
             team1_table = tables[0]
             team1_name = teams[0]
+            first_table = table_scrape(team1_table, team1_name, curr_map)
+            first_table['Rounds Played'] = rounds_played
 
-            df_global.append(table_scrape(team1_table, team1_name, curr_map))
+            df_global.append(first_table)
 
             # Team 2 Stats Table & Name
             team2_table = tables[1]
             team2_name = teams[1]
+            second_table = table_scrape(team2_table, team2_name, curr_map)
+            second_table['Rounds Played'] = rounds_played
 
-            df_global.append(table_scrape(team2_table, team2_name, curr_map))
+            df_global.append(second_table)
 
         df_global = pd.concat(df_global, ignore_index=True, axis=0)
         df_global['Date'] = date
@@ -109,7 +123,7 @@ def vlrscrape(link):
         df_global['Series Type'] = series_type
 
         cols = df_global.columns.tolist()
-        cols = cols[-5:] + [cols[-6]] + cols[0:-6]
+        cols = cols[-5:] + cols[-8:-5] + cols[:-8]
         df_global = df_global[cols]
 
     except Exception as e:
